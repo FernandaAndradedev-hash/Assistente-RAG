@@ -19,6 +19,8 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 from chain import ask
@@ -40,27 +42,51 @@ logger = logging.getLogger(__name__)
 # Aplicação FastAPI ─────────────────────────────────────────────────────────
 
 app = FastAPI(
-    title="RAG Assistant API",
-    description="Chatbot sobre documentos internos com RAG seguro.",
+    title="Assistente RAG",
+    description="""
+## Chatbot de Documentos Internos
+
+API para indexação e consulta de documentos internos usando **Retrieval-Augmented Generation (RAG)**.
+
+### Como usar
+
+1. **Ingira seus documentos** via `POST /ingest`
+2. **Faça perguntas** via `POST /ask`
+3. O assistente responde com base apenas nos documentos indexados, citando a fonte
+
+### Segurança
+- Todas as entradas são sanitizadas contra prompt injection
+- Arquivos são validados antes da ingestão
+- Respostas são verificadas antes de retornar ao usuário
+    """,
     version="1.0.0",
-    # docs_url="/docs" em desenvolvimento.
-    # Em produção, mude para docs_url=None para não expor a documentação.
-    docs_url="/docs",
-    redoc_url="/redoc",
+    contact={
+        "name": "Fernanda Andrade",
+        "url": "https://github.com/FernandaAndradedev-hash",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    docs_url=None,   # desativa o padrão para usar o customizado abaixo
+    redoc_url=None,
 )
 
-# CORS: define quais origens podem chamar a API
-# Em produção, substitua "*" pelo domínio real do frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8001",  # Chainlit em desenvolvimento
-        # "https://seu-dominio.com",  # adicione em produção
-    ],
-    allow_credentials=False,       # não usamos cookies
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
-)
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="Assistente RAG — API Docs",
+        swagger_ui_parameters={
+            "defaultModelsExpandDepth": -1,   # oculta schemas por padrão
+            "docExpansion": "list",            # mostra endpoints em lista
+            "filter": True,                    # habilita barra de busca
+            "tryItOutEnabled": True,           # habilita "Try it out" por padrão
+        },
+        swagger_favicon_url="https://fastapi.tiangolo.com/img/favicon.png",
+        swagger_css_url="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css",
+    )
 
 
 # Modelos de request/response (Pydantic valida automaticamente)─────────────────────────────────────────────────────────────────────────────
