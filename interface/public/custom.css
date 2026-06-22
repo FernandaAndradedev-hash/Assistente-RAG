@@ -1,0 +1,904 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   RAG Assistant — Design System
+   
+   Estrutura deste arquivo:
+   1. Imports de fontes
+   2. Variáveis CSS (tokens do design system)
+   3. Reset e base
+   4. Layout principal
+   5. Sidebar (histórico de conversas)
+   6. Área de chat
+   7. Mensagens — usuário
+   8. Mensagens — assistente
+   9. Fontes e citações
+   10. Input de mensagem
+   11. Botões
+   12. Indicador de digitação (loading)
+   13. Estados de erro e vazio
+   14. Scrollbar customizada
+   15. Responsivo (mobile)
+   16. Modo claro (opcional)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ─── 1. Fontes ─────────────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+
+/* ─── 2. Variáveis CSS ──────────────────────────────────────────────────── */
+/*
+   Por que variáveis CSS em vez de valores fixos?
+   Centraliza toda a paleta em um lugar. Para mudar o tema inteiro,
+   basta alterar estas variáveis. Ex: para tema claro, sobrescreva
+   em :root { --bg-primary: #ffffff; ... }
+*/
+
+:root {
+  /* Fundos */
+  --bg-primary:     #0D1117;
+  --bg-secondary:   #161B22;
+  --bg-tertiary:    #21262D;
+  --bg-hover:       #2D333B;
+  --bg-user-msg:    #1C2128;
+
+  /* Bordas */
+  --border-color:   #30363D;
+  --border-subtle:  #21262D;
+
+  /* Textos */
+  --text-primary:   #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-disabled:  #484F58;
+  --text-code:      #79C0FF;
+
+  /* Acentos */
+  --accent-primary: #58A6FF;
+  --accent-hover:   #79C0FF;
+  --accent-success: #3FB950;
+  --accent-warning: #D29922;
+  --accent-error:   #F85149;
+
+  /* Tipografia */
+  --font-sans:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono:  'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+  --text-xs:    11px;
+  --text-sm:    13px;
+  --text-base:  14px;
+  --text-md:    15px;
+  --text-lg:    16px;
+  --text-xl:    20px;
+  --text-2xl:   24px;
+
+  /* Espaçamento (multíplos de 4px) */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+
+  /* Border radius */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* Sombras */
+  --shadow-sm:  0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md:  0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg:  0 8px 24px rgba(0, 0, 0, 0.6);
+
+  /* Transições */
+  --transition-fast:   0.1s ease;
+  --transition-normal: 0.2s ease;
+  --transition-slow:   0.3s ease;
+}
+
+
+/* ─── 3. Reset e Base ────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;  /* suaviza fontes no Mac */
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+
+/* ─── 4. Layout Principal ────────────────────────────────────────────────── */
+
+/* Container principal do Chainlit */
+#root {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Área de conteúdo principal (exclui sidebar) */
+.main-content,
+[class*="main"] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-primary);
+  overflow: hidden;
+}
+
+/* Header superior com nome do assistente */
+.header,
+[class*="Header"] {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 56px;
+  flex-shrink: 0;
+}
+
+.header h1,
+[class*="Header"] h1 {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+
+/* ─── 5. Sidebar ──────────────────────────────────────────────────────────── */
+/*
+   A sidebar contém o histórico de conversas.
+   Para OCULTAR completamente: display: none;
+   Para REDUZIR: ajuste a largura.
+*/
+
+.sidebar,
+[class*="Sidebar"] {
+  width: 260px;
+  min-width: 260px;
+  background-color: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Título da sidebar */
+.sidebar-title,
+[class*="Sidebar"] h2 {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: var(--space-5) var(--space-4) var(--space-3);
+}
+
+/* Item de conversa na sidebar */
+.conversation-item,
+[class*="ConversationItem"],
+[class*="ThreadListItem"] {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  margin: var(--space-1) var(--space-2);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-item:hover,
+[class*="ConversationItem"]:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Item selecionado/ativo */
+.conversation-item.active,
+[class*="ConversationItem"][aria-selected="true"] {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-left: 3px solid var(--accent-primary);
+  padding-left: calc(var(--space-4) - 3px);
+}
+
+/* Botão "Nova conversa" */
+.new-chat-button,
+[class*="NewChat"] button {
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--accent-primary);
+  color: #000000;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  width: calc(100% - var(--space-8));
+}
+
+.new-chat-button:hover {
+  background-color: var(--accent-hover);
+}
+
+
+/* ─── 6. Área de Chat ────────────────────────────────────────────────────── */
+
+/* Container de todas as mensagens */
+.messages-container,
+[class*="Messages"],
+[class*="MessageContainer"] {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+
+  /* Limita largura para melhor legibilidade (70 chars ≈ ideal) */
+  max-width: 820px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+
+/* ─── 7. Mensagens — Usuário ─────────────────────────────────────────────── */
+
+.user-message,
+[class*="UserMessage"],
+[data-role="user"] {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.user-message .bubble,
+[data-role="user"] [class*="Bubble"],
+[data-role="user"] [class*="Content"] {
+  background-color: var(--accent-primary);
+  color: #000000;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-sm) var(--radius-lg);
+  max-width: 75%;
+  font-size: var(--text-base);
+  line-height: 1.5;
+  font-weight: 400;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Avatar do usuário */
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background-color: var(--accent-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: #000000;
+  flex-shrink: 0;
+}
+
+
+/* ─── 8. Mensagens — Assistente ──────────────────────────────────────────── */
+
+.assistant-message,
+[class*="AssistantMessage"],
+[data-role="assistant"] {
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.assistant-message .bubble,
+[data-role="assistant"] [class*="Bubble"],
+[data-role="assistant"] [class*="Content"] {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+  max-width: 85%;
+  font-size: var(--text-base);
+  line-height: 1.7;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Avatar do assistente */
+.assistant-avatar,
+[class*="Avatar"][data-role="assistant"] {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, var(--accent-primary) 0%, #8B5CF6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+/* Elementos dentro de mensagens do assistente */
+
+/* Parágrafos */
+[data-role="assistant"] p {
+  margin-bottom: var(--space-3);
+}
+
+[data-role="assistant"] p:last-child {
+  margin-bottom: 0;
+}
+
+/* Cabeçalhos */
+[data-role="assistant"] h1,
+[data-role="assistant"] h2,
+[data-role="assistant"] h3 {
+  font-weight: 600;
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+[data-role="assistant"] h1 { font-size: var(--text-xl); }
+[data-role="assistant"] h2 { font-size: var(--text-lg); }
+[data-role="assistant"] h3 { font-size: var(--text-md); }
+
+/* Listas */
+[data-role="assistant"] ul,
+[data-role="assistant"] ol {
+  padding-left: var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+[data-role="assistant"] li {
+  margin-bottom: var(--space-1);
+}
+
+[data-role="assistant"] li::marker {
+  color: var(--accent-primary);
+}
+
+/* Negrito */
+[data-role="assistant"] strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Itálico */
+[data-role="assistant"] em {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Código inline */
+[data-role="assistant"] code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--bg-tertiary);
+  color: var(--text-code);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+/* Bloco de código */
+[data-role="assistant"] pre {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  overflow-x: auto;
+  margin: var(--space-3) 0;
+}
+
+[data-role="assistant"] pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+}
+
+/* Citações (blockquote) */
+[data-role="assistant"] blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: var(--space-4);
+  margin: var(--space-3) 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* Divisor horizontal */
+[data-role="assistant"] hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: var(--space-4) 0;
+}
+
+
+/* ─── 9. Fontes e Citações ────────────────────────────────────────────────── */
+/*
+   Estiliza a seção "Fontes: arquivo.pdf" que aparece ao final
+   de cada resposta do assistente.
+*/
+
+.sources-section {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.sources-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-disabled);
+  margin-bottom: var(--space-2);
+}
+
+.source-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px 8px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  color: var(--accent-primary);
+  font-family: var(--font-mono);
+  margin-right: var(--space-2);
+  margin-bottom: var(--space-1);
+  transition: background-color var(--transition-fast);
+}
+
+.source-tag:hover {
+  background-color: var(--bg-hover);
+}
+
+/* Ícone antes do nome do arquivo */
+.source-tag::before {
+  content: "📄";
+  font-size: 10px;
+}
+
+/* Timestamp da mensagem */
+.message-timestamp {
+  font-size: var(--text-xs);
+  color: var(--text-disabled);
+  margin-top: var(--space-2);
+  text-align: right;
+}
+
+
+/* ─── 10. Input de Mensagem ──────────────────────────────────────────────── */
+
+/* Container do input (fundo e área ao redor) */
+.input-container,
+[class*="InputBox"],
+[class*="ChatInput"] {
+  padding: var(--space-4) var(--space-5);
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+/* Wrapper interno do input */
+.input-wrapper {
+  max-width: 820px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-3);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  transition: border-color var(--transition-fast);
+}
+
+.input-wrapper:focus-within {
+  border-color: var(--accent-primary);
+  /* Glow sutil ao focar */
+  box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.1);
+}
+
+/* Campo de texto (textarea) */
+.input-wrapper textarea,
+[class*="ChatInput"] textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: 1.5;
+  resize: none;
+  min-height: 24px;
+  max-height: 200px;       /* auto-expand até 200px, depois scrollbar */
+  overflow-y: auto;
+}
+
+/* Placeholder */
+.input-wrapper textarea::placeholder,
+[class*="ChatInput"] textarea::placeholder {
+  color: var(--text-disabled);
+}
+
+/* Botão de enviar */
+.send-button,
+[class*="SendButton"],
+[class*="SubmitButton"] {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  background-color: var(--accent-primary);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color var(--transition-fast), transform var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.send-button:hover {
+  background-color: var(--accent-hover);
+}
+
+.send-button:active {
+  transform: scale(0.95);
+}
+
+.send-button:disabled {
+  background-color: var(--bg-hover);
+  cursor: not-allowed;
+}
+
+/* Ícone dentro do botão */
+.send-button svg {
+  width: 16px;
+  height: 16px;
+  color: #000000;
+}
+
+/* Dica abaixo do input */
+.input-hint {
+  text-align: center;
+  font-size: var(--text-xs);
+  color: var(--text-disabled);
+  margin-top: var(--space-2);
+  max-width: 820px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+
+/* ─── 11. Botões ─────────────────────────────────────────────────────────── */
+
+/* Botão primário */
+.btn-primary {
+  padding: var(--space-2) var(--space-5);
+  background-color: var(--accent-primary);
+  color: #000000;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  font-family: var(--font-sans);
+}
+
+.btn-primary:hover { background-color: var(--accent-hover); }
+
+/* Botão secundário */
+.btn-secondary {
+  padding: var(--space-2) var(--space-5);
+  background-color: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  font-family: var(--font-sans);
+}
+
+.btn-secondary:hover { background-color: var(--bg-hover); }
+
+/* Botão fantasma (ghost) */
+.btn-ghost {
+  padding: var(--space-2) var(--space-4);
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+  font-family: var(--font-sans);
+}
+
+.btn-ghost:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+
+/* ─── 12. Indicador de Digitação (Loading) ────────────────────────────────── */
+/*
+   Três pontos animados que aparecem enquanto o assistente "pensa".
+   Nomeado "typing-indicator" pois simula o indicador de digitação
+   comum em apps de mensagem.
+*/
+
+.typing-indicator,
+[class*="LoadingDots"],
+[class*="Thinking"] {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg) var(--radius-lg) var(--radius-lg) var(--radius-sm);
+  width: fit-content;
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--text-secondary);
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+
+/* ─── 13. Estados de Erro e Vazio ────────────────────────────────────────── */
+
+/* Estado vazio — quando não há mensagens */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: var(--space-4);
+  padding: var(--space-8);
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  opacity: 0.4;
+}
+
+.empty-state-title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.empty-state-description {
+  font-size: var(--text-md);
+  color: var(--text-secondary);
+  max-width: 420px;
+  line-height: 1.6;
+}
+
+/* Sugestões de perguntas (chips clicáveis) */
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+.suggestion-chip {
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.suggestion-chip:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background-color: rgba(88, 166, 255, 0.08);
+}
+
+/* Mensagem de erro inline */
+.error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: rgba(248, 81, 73, 0.08);
+  border: 1px solid rgba(248, 81, 73, 0.3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--accent-error);
+}
+
+/* Badge de "sem contexto encontrado" */
+.no-context-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 3px 10px;
+  background-color: rgba(210, 153, 34, 0.1);
+  border: 1px solid rgba(210, 153, 34, 0.3);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  color: var(--accent-warning);
+  margin-bottom: var(--space-3);
+}
+
+
+/* ─── 14. Scrollbar Customizada ──────────────────────────────────────────── */
+/*
+   Sobrescreve a scrollbar padrão do sistema operacional.
+   Funciona no Chrome, Edge e Firefox moderno.
+*/
+
+/* Chrome/Edge/Safari */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: var(--radius-full);
+  transition: background-color var(--transition-fast);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-disabled);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+
+/* ─── 15. Responsivo ─────────────────────────────────────────────────────── */
+
+/* Tablet (< 768px) */
+@media (max-width: 768px) {
+  .sidebar,
+  [class*="Sidebar"] {
+    display: none;  /* oculta sidebar em telas pequenas */
+  }
+
+  .messages-container,
+  [class*="Messages"] {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  [data-role="user"] [class*="Content"],
+  [data-role="user"] [class*="Bubble"] {
+    max-width: 90%;
+  }
+
+  [data-role="assistant"] [class*="Content"],
+  [data-role="assistant"] [class*="Bubble"] {
+    max-width: 95%;
+  }
+}
+
+/* Mobile (< 480px) */
+@media (max-width: 480px) {
+  .input-container,
+  [class*="InputBox"] {
+    padding: var(--space-3);
+  }
+
+  .empty-state-title {
+    font-size: var(--text-lg);
+  }
+
+  .suggestion-chips {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .suggestion-chip {
+    text-align: center;
+  }
+}
+
+
+/* ─── 16. Modo Claro (Opcional) ──────────────────────────────────────────── */
+/*
+   Para ativar o modo claro automaticamente conforme preferência do sistema,
+   descomente este bloco.
+   
+   Para FORÇAR modo claro sempre, copie as variáveis abaixo para :root {}.
+*/
+
+/*
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg-primary:     #FFFFFF;
+    --bg-secondary:   #F6F8FA;
+    --bg-tertiary:    #EAEEF2;
+    --bg-hover:       #DDE3EA;
+    --bg-user-msg:    #F0F6FF;
+
+    --border-color:   #D0D7DE;
+    --border-subtle:  #EAEEF2;
+
+    --text-primary:   #1F2328;
+    --text-secondary: #656D76;
+    --text-disabled:  #9198A1;
+    --text-code:      #0A69DA;
+
+    --accent-primary: #0969DA;
+    --accent-hover:   #0860CA;
+    --accent-success: #1A7F37;
+    --accent-warning: #9A6700;
+    --accent-error:   #CF222E;
+  }
+}
+*/
