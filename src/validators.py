@@ -57,7 +57,7 @@ _INJECTION_PATTERNS: list[str] = [
     r"new\s+(system\s+)?instructions?\s*:",
     r"updated?\s+instructions?\s*:",
     r"system\s+prompt\s*:",
-    r"<\s*system\s*>",
+    r"system\s*>",
     r"\[INST\]",
     r"\[SYSTEM\]",
     r"###\s*instruction",
