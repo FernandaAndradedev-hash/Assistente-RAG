@@ -1,0 +1,33 @@
+# ─── NUNCA suba estes arquivos ────────────────────────────────────────────────
+.env
+*.key
+*.pem
+*.p12
+*.pfx
+
+# ─── Python ───────────────────────────────────────────────────────────────────
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ─── Documentos (dados sensíveis) ─────────────────────────────────────────────
+docs/*.pdf
+docs/*.txt
+docs/*.md
+!docs/.gitkeep
+
+# ─── Docker ───────────────────────────────────────────────────────────────────
+qdrant_storage/
+
+# ─── IDEs ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
